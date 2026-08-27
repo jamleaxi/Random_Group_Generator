@@ -19,7 +19,7 @@
                     id="institution_name"
                     name="institution_name"
                     value="{{ old('institution_name', $setting->institution_name) }}"
-                    placeholder="e.g. Acme Corporation"
+                    placeholder="e.g. SPAMAST"
                     class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none"
                 >
                 <p class="mt-1 text-sm text-gray-500">Shown above the generator on every page. Leave blank to hide it.</p>

@@ -9,22 +9,24 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-emerald-50/40 text-gray-900 min-h-screen antialiased">
-        <div class="max-w-6xl mx-auto px-4 py-8 sm:py-12">
-            @if ($setting->institution_name || $setting->logo_path)
-                <div class="mb-4 flex items-center gap-3">
+        @if ($setting->institution_name || $setting->logo_path)
+            <div class="bg-emerald-800">
+                <div class="max-w-6xl mx-auto px-4 py-4 flex items-center gap-3">
                     @if ($setting->logo_path)
                         <img
                             src="{{ $setting->logoUrl() }}"
                             alt="{{ $setting->institution_name ?? 'Institution logo' }}"
-                            class="h-12 w-12 rounded-md object-contain bg-white ring-1 ring-amber-300 p-1"
+                            class="h-12 w-12 rounded-md object-contain bg-white ring-1 ring-amber-400 p-1"
                         >
                     @endif
                     @if ($setting->institution_name)
-                        <h2 class="text-xl font-bold text-emerald-900">{{ $setting->institution_name }}</h2>
+                        <h2 class="text-xl font-bold text-white">{{ $setting->institution_name }}</h2>
                     @endif
                 </div>
-            @endif
+            </div>
+        @endif
 
+        <div class="max-w-6xl mx-auto px-4 py-8 sm:py-12">
             <header class="mb-8 flex items-center justify-between border-b-2 border-amber-400 pb-4">
                 <a href="{{ route('batches.index') }}" class="text-lg font-semibold text-emerald-900">
                     Random Group Generator

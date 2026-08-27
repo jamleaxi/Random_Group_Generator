@@ -23,11 +23,11 @@ class SettingsTest extends TestCase
     public function test_institution_name_can_be_set(): void
     {
         $response = $this->post(route('settings.update'), [
-            'institution_name' => 'Acme Corporation',
+            'institution_name' => 'SPAMAST',
         ]);
 
         $response->assertRedirect(route('settings.edit'));
-        $this->assertSame('Acme Corporation', Setting::current()->institution_name);
+        $this->assertSame('SPAMAST', Setting::current()->institution_name);
     }
 
     public function test_a_logo_can_be_uploaded_and_replaces_the_previous_one(): void
