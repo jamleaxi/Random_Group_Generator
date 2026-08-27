@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreBatchRequest extends FormRequest
+class UpdateBatchRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,9 +23,7 @@ class StoreBatchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['nullable', 'string', 'max:255'],
-            'group_count' => ['required', 'integer', 'min:2', 'max:50'],
-            'group_names' => ['nullable', 'string'],
+            'name' => ['required', 'string', 'max:255'],
             'balance_gender' => ['nullable', 'boolean'],
         ];
     }

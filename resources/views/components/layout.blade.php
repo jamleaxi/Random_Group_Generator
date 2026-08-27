@@ -39,6 +39,14 @@
                     >
                         New batch
                     </a>
+                    @auth
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="text-sm font-medium text-gray-500 hover:text-gray-900">
+                                Log out
+                            </button>
+                        </form>
+                    @endauth
                 </div>
             </header>
 

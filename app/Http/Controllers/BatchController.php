@@ -4,11 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreBatchRequest;
 use App\Http\Requests\StoreParticipantsRequest;
+use App\Http\Requests\UpdateBatchRequest;
 use App\Models\Batch;
 use App\Models\GroupTeam;
+use App\Models\Participant;
 use App\Services\GroupRandomizer;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class BatchController extends Controller
@@ -49,6 +52,7 @@ class BatchController extends Controller
             $batch = Batch::create([
                 'name' => $request->validated('name') ?: 'Untitled batch',
                 'group_count' => $groupCount,
+                'balance_gender' => $request->boolean('balance_gender'),
             ]);
 
             for ($position = 1; $position <= $groupCount; $position++) {
@@ -76,6 +80,20 @@ class BatchController extends Controller
     }
 
     /**
+     * Rename a batch and/or update its gender-balancing preference.
+     */
+    public function update(UpdateBatchRequest $request, Batch $batch): RedirectResponse
+    {
+        $batch->update([
+            'name' => $request->validated('name'),
+            'balance_gender' => $request->boolean('balance_gender'),
+        ]);
+
+        return redirect()->route('batches.show', $batch)
+            ->with('status', 'Batch updated.');
+    }
+
+    /**
      * Randomly assign the submitted names to the batch's group teams.
      */
     public function storeParticipants(StoreParticipantsRequest $request, Batch $batch, GroupRandomizer $randomizer): RedirectResponse
@@ -89,6 +107,55 @@ class BatchController extends Controller
 
         return redirect()->route('batches.show', $batch)
             ->with('status', $result['assigned']->count().' name(s) randomized into groups.');
+    }
+
+    /**
+     * Manually move a participant to a different team.
+     */
+    public function transferParticipant(Batch $batch, Participant $participant, GroupTeam $groupTeam): RedirectResponse
+    {
+        abort_unless($participant->batch_id === $batch->id && $groupTeam->batch_id === $batch->id, 404);
+
+        $participant->update(['group_team_id' => $groupTeam->id]);
+
+        return redirect()->route('batches.show', $batch)
+            ->with('status', "{$participant->name} moved to {$groupTeam->name}.");
+    }
+
+    /**
+     * Remove a participant from the batch entirely.
+     */
+    public function destroyParticipant(Batch $batch, Participant $participant): RedirectResponse
+    {
+        abort_unless($participant->batch_id === $batch->id, 404);
+
+        $participant->delete();
+
+        return redirect()->route('batches.show', $batch)
+            ->with('status', "{$participant->name} removed.");
+    }
+
+    /**
+     * Generate (or regenerate) the public link that lets users self-submit
+     * their names into this batch.
+     */
+    public function openLink(Batch $batch): RedirectResponse
+    {
+        $batch->update(['public_token' => Str::random(32)]);
+
+        return redirect()->route('batches.show', $batch)
+            ->with('status', 'Batch opened for public submissions.');
+    }
+
+    /**
+     * Disable the public link so users can no longer self-submit names.
+     */
+    public function closeLink(Batch $batch): RedirectResponse
+    {
+        $batch->update(['public_token' => null]);
+
+        return redirect()->route('batches.show', $batch)
+            ->with('status', 'Public submission link closed.');
     }
 
     /**

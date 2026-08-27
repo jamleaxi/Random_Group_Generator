@@ -5,12 +5,20 @@ namespace Tests\Feature;
 use App\Models\Batch;
 use App\Models\GroupTeam;
 use App\Models\Participant;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class BatchGroupingTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->actingAs(User::factory()->create());
+    }
 
     public function test_creating_a_batch_creates_named_and_auto_named_groups(): void
     {

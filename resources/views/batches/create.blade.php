@@ -54,6 +54,24 @@
             @enderror
         </div>
 
+        <div class="flex items-center gap-2">
+            <input
+                type="checkbox"
+                id="balance_gender"
+                name="balance_gender"
+                value="1"
+                @checked(old('balance_gender'))
+                class="h-4 w-4 rounded border-gray-300 text-emerald-700 focus:ring-emerald-500"
+            >
+            <label for="balance_gender" class="text-sm font-medium text-gray-700">
+                Balance genders evenly across groups
+            </label>
+        </div>
+        <p class="-mt-4 text-sm text-gray-500">
+            When enabled, new names are assigned to keep each group's gender mix as even as possible. Otherwise names
+            are assigned regardless of gender.
+        </p>
+
         <button
             type="submit"
             class="inline-flex items-center rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm ring-1 ring-amber-400 hover:bg-emerald-800"

@@ -34,4 +34,14 @@ class GroupTeam extends Model
     {
         return $this->hasMany(Participant::class)->orderBy('name');
     }
+
+    /**
+     * Member counts grouped by gender, keyed by gender value.
+     *
+     * @return array<string, int>
+     */
+    public function genderCounts(): array
+    {
+        return $this->participants->countBy('gender')->all();
+    }
 }

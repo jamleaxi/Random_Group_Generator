@@ -16,6 +16,8 @@ class Batch extends Model
         'name',
         'group_count',
         'locked',
+        'balance_gender',
+        'public_token',
     ];
 
     /**
@@ -25,7 +27,13 @@ class Batch extends Model
     {
         return [
             'locked' => 'boolean',
+            'balance_gender' => 'boolean',
         ];
+    }
+
+    public function isOpenForSubmissions(): bool
+    {
+        return ! $this->locked && $this->public_token !== null;
     }
 
     /**
