@@ -57,6 +57,38 @@ class GroupRandomizer
     }
 
     /**
+     * Find every name (case-insensitive) that would collide if the given
+     * entries were assigned right now: names repeated within the list
+     * itself, and names that already exist elsewhere in the batch. Unlike
+     * assign(), nothing is skipped or created — this just flags every row
+     * that shares a colliding name so a caller can highlight it for review.
+     *
+     * @param  list<array{name: string, gender: string}>  $entries
+     * @return list<string> lowercased duplicate name keys
+     */
+    public function findDuplicateNameKeys(Batch $batch, array $entries): array
+    {
+        $existingNames = $batch->participants()->pluck('name')
+            ->map(fn (string $name) => mb_strtolower($name))
+            ->all();
+
+        $seen = [];
+        $duplicates = [];
+
+        foreach ($entries as $entry) {
+            $key = mb_strtolower($entry['name']);
+
+            if (in_array($key, $existingNames, true) || isset($seen[$key])) {
+                $duplicates[$key] = true;
+            }
+
+            $seen[$key] = true;
+        }
+
+        return array_keys($duplicates);
+    }
+
+    /**
      * Assign a single participant (typically from the public join form) to
      * whichever team currently keeps the batch most balanced. When
      * `balance_gender` is enabled on the batch, the participant's own gender

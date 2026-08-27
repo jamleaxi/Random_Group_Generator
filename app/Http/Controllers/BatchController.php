@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ImportParticipantsRequest;
+use App\Http\Requests\RenameGroupTeamRequest;
 use App\Http\Requests\StoreBatchRequest;
 use App\Http\Requests\StoreParticipantsRequest;
 use App\Http\Requests\UpdateBatchRequest;
@@ -10,11 +11,15 @@ use App\Models\Batch;
 use App\Models\GroupTeam;
 use App\Models\Participant;
 use App\Services\GroupRandomizer;
+use App\Services\TeamsSpreadsheetExporter;
+use App\Support\Gender;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BatchController extends Controller
 {
@@ -100,6 +105,50 @@ class BatchController extends Controller
     }
 
     /**
+     * Download the batch's members as a CSV file, sorted alphabetically.
+     */
+    public function exportCsv(Batch $batch): StreamedResponse
+    {
+        $participants = $batch->participants()->orderBy('name')->get();
+
+        $filename = Str::slug($batch->name).'-groups.csv';
+
+        $callback = function () use ($participants) {
+            $handle = fopen('php://output', 'w');
+
+            fputcsv($handle, ['name', 'gender']);
+
+            foreach ($participants as $participant) {
+                fputcsv($handle, [$participant->name, Gender::label($participant->gender)]);
+            }
+
+            fclose($handle);
+        };
+
+        return response()->streamDownload($callback, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+
+    /**
+     * Download the batch's members as an Excel workbook: an "All" sheet
+     * (name, gender, team) plus one sheet per team (name, gender). Members
+     * are always sorted alphabetically by name.
+     */
+    public function exportTeamsExcel(Batch $batch, TeamsSpreadsheetExporter $exporter): StreamedResponse
+    {
+        $spreadsheet = $exporter->build($batch);
+
+        $filename = Str::slug($batch->name).'-teams.xlsx';
+
+        return response()->streamDownload(function () use ($spreadsheet) {
+            (new Xlsx($spreadsheet))->save('php://output');
+        }, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ]);
+    }
+
+    /**
      * Rename a batch and/or update its gender-balancing preference.
      */
     public function update(UpdateBatchRequest $request, Batch $batch): RedirectResponse
@@ -111,6 +160,19 @@ class BatchController extends Controller
 
         return redirect()->route('batches.show', $batch)
             ->with('status', 'Batch updated.');
+    }
+
+    /**
+     * Rename one of the batch's group teams.
+     */
+    public function renameTeam(RenameGroupTeamRequest $request, Batch $batch, GroupTeam $groupTeam): RedirectResponse
+    {
+        abort_unless($groupTeam->batch_id === $batch->id, 404);
+
+        $groupTeam->update(['name' => $request->validated('name')]);
+
+        return redirect()->route('batches.show', $batch)
+            ->with('status', 'Team renamed.');
     }
 
     /**
@@ -130,20 +192,38 @@ class BatchController extends Controller
     }
 
     /**
-     * Import name/gender entries from an uploaded CSV file and randomly
-     * assign them to the batch's group teams.
+     * Parse name/gender entries from an uploaded CSV file and load them into
+     * the "Add names manually" form for review. Nothing is assigned to a
+     * group team until the admin submits that form.
      */
     public function importParticipants(ImportParticipantsRequest $request, Batch $batch, GroupRandomizer $randomizer): RedirectResponse
     {
-        $result = $randomizer->assign($batch, $request->entries());
+        $entries = $request->entries();
 
-        if ($result['duplicates'] !== []) {
+        if ($entries === []) {
             return redirect()->route('batches.show', $batch)
-                ->with('duplicates', $result['duplicates']);
+                ->with('error', 'No valid names were found in that CSV.');
         }
 
-        return redirect()->route('batches.show', $batch)
-            ->with('status', $result['assigned']->count().' name(s) imported and randomized into groups.');
+        $duplicateNameKeys = $randomizer->findDuplicateNameKeys($batch, $entries);
+
+        $redirect = redirect()->route('batches.show', $batch)
+            ->with('importedEntries', $entries)
+            ->with('importedDuplicateNameKeys', $duplicateNameKeys)
+            ->with('status', count($entries).' name(s) imported from CSV. Review them below, then click "Randomize into groups".');
+
+        if ($duplicateNameKeys !== []) {
+            $duplicateNames = collect($entries)
+                ->pluck('name')
+                ->filter(fn (string $name) => in_array(mb_strtolower($name), $duplicateNameKeys, true))
+                ->unique()
+                ->values()
+                ->all();
+
+            $redirect->with('importDuplicates', $duplicateNames);
+        }
+
+        return $redirect;
     }
 
     /**
@@ -170,6 +250,24 @@ class BatchController extends Controller
 
         return redirect()->route('batches.show', $batch)
             ->with('status', "{$participant->name} removed.");
+    }
+
+    /**
+     * Remove every participant from the batch, emptying all of its groups.
+     * The groups themselves are left in place.
+     */
+    public function clearParticipants(Batch $batch): RedirectResponse
+    {
+        if ($batch->locked) {
+            return redirect()->route('batches.show', $batch)
+                ->with('error', 'This batch is locked and its groups cannot be cleared. Unlock it first.');
+        }
+
+        $count = $batch->participants()->count();
+        $batch->participants()->delete();
+
+        return redirect()->route('batches.show', $batch)
+            ->with('status', "Cleared {$count} member(s) from all groups.");
     }
 
     /**

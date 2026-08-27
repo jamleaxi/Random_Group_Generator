@@ -28,6 +28,14 @@
                 Public view
             </a>
 
+            <a href="{{ route('batches.export', $batch) }}" class="text-sm font-medium text-emerald-700 hover:text-emerald-900">
+                Download CSV
+            </a>
+
+            <a href="{{ route('batches.export.teams', $batch) }}" class="text-sm font-medium text-emerald-700 hover:text-emerald-900">
+                Download by Team (Excel)
+            </a>
+
             <a href="{{ route('batches.index') }}" class="text-sm font-medium text-gray-500 hover:text-gray-900">
                 &larr; All batches
             </a>
@@ -35,7 +43,7 @@
             <form method="POST" action="{{ route('batches.lock', $batch) }}">
                 @csrf
                 @method('PATCH')
-                <button type="submit" title="{{ $batch->locked ? 'Unlock' : 'Lock' }}" class="text-amber-700 hover:text-amber-900">
+                <button type="submit" title="{{ $batch->locked ? 'Unlock' : 'Lock' }}" class="cursor-pointer text-amber-700 hover:text-amber-900">
                     <x-icons.lock :locked="$batch->locked" class="w-5 h-5" />
                 </button>
             </form>
@@ -51,7 +59,7 @@
                     type="submit"
                     title="Delete"
                     @disabled($batch->locked)
-                    class="text-red-600 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-300"
+                    class="cursor-pointer text-red-600 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-300"
                 >
                     <x-icons.trash class="w-5 h-5" />
                 </button>
@@ -106,6 +114,15 @@
                         onclick="this.select()"
                         class="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-700 shadow-sm"
                     >
+                    <button
+                        type="button"
+                        title="Copy link"
+                        class="copy-link-btn cursor-pointer shrink-0 inline-flex items-center justify-center rounded-md border border-gray-300 p-2 text-gray-500 hover:text-emerald-700 hover:border-emerald-300"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
+                            <rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                    </button>
                 </div>
                 <p class="mt-1 text-xs text-gray-400">Share this on your local network. Devices must be on the same network to reach it.</p>
                 <form method="POST" action="{{ route('batches.link.close', $batch) }}" class="mt-3">
@@ -135,28 +152,51 @@
 
     <div class="mb-10 grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div class="lg:col-span-2 rounded-md border border-emerald-200 bg-white p-6 shadow-sm">
-            <h2 class="text-lg font-medium mb-1 text-emerald-900">Add names manually</h2>
+            <h2 class="text-lg font-medium mb-1 text-emerald-900 flex items-center gap-2">
+                Add names manually
+                <span id="names-counter" class="text-xs font-medium text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5"></span>
+            </h2>
 
-            @if ($batch->balance_gender)
+            @php
+                $importedEntries = session('importedEntries', []);
+                $importedDuplicateKeys = session('importedDuplicateNameKeys', []);
+                $showPerRowForm = $batch->balance_gender || $importedEntries !== [];
+            @endphp
+
+            @if ($showPerRowForm)
                 <p class="text-sm text-gray-500 mb-4">
-                    Gender balancing is on, so pick each person's gender below. Names are randomly assigned, keeping
-                    each group's gender mix as even as possible.
+                    @if ($importedEntries)
+                        Review the imported names and genders below, then click "Randomize into groups" when ready.
+                    @else
+                        Gender balancing is on, so pick each person's gender below. Names are randomly assigned, keeping
+                        each group's gender mix as even as possible.
+                    @endif
                 </p>
 
                 <form method="POST" action="{{ route('batches.participants.store', $batch) }}">
                     @csrf
 
                     <div id="participant-rows" class="space-y-2">
-                        <div class="flex gap-2 participant-row">
-                            <input type="text" name="entries[0][name]" placeholder="Full name" class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none">
-                            <select name="entries[0][gender]" class="rounded-md border border-gray-300 px-2 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none">
-                                @foreach (\App\Support\Gender::options() as $value => $label)
-                                    <option value="{{ $value }}">{{ $label }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                        @forelse ($importedEntries as $i => $entry)
+                            @php $isDuplicate = in_array(mb_strtolower($entry['name']), $importedDuplicateKeys, true); @endphp
+                            <div class="flex gap-2 participant-row">
+                                <input
+                                    type="text" name="entries[{{ $i }}][name]" value="{{ $entry['name'] }}" placeholder="Full name"
+                                    title="{{ $isDuplicate ? 'Duplicate name — edit or remove this row.' : '' }}"
+                                    class="flex-1 rounded-md border px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none {{ $isDuplicate ? 'duplicate-name-field border-red-400 bg-red-50' : 'border-gray-300' }}"
+                                >
+                                <x-gender-picker name="entries[{{ $i }}][gender]" :selected="$entry['gender']" />
+                                <button type="button" class="remove-row cursor-pointer text-sm font-medium text-red-600 hover:text-red-800">&times;</button>
+                            </div>
+                        @empty
+                            <div class="flex gap-2 participant-row">
+                                <input type="text" name="entries[0][name]" placeholder="Full name" class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none">
+                                <x-gender-picker name="entries[0][gender]" />
+                            </div>
+                        @endforelse
                     </div>
 
+                    @error('entries')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                     @error('entries.*.name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
 
                     <button type="button" id="add-row" class="mt-3 text-sm font-medium text-emerald-700 hover:text-emerald-900">
@@ -176,12 +216,8 @@
                 <template id="participant-row-template">
                     <div class="flex gap-2 participant-row">
                         <input type="text" name="entries[__index__][name]" placeholder="Full name" class="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none">
-                        <select name="entries[__index__][gender]" class="rounded-md border border-gray-300 px-2 py-2 text-sm shadow-sm focus:border-emerald-500 focus:ring-emerald-500 focus:outline-none">
-                            @foreach (\App\Support\Gender::options() as $value => $label)
-                                <option value="{{ $value }}">{{ $label }}</option>
-                            @endforeach
-                        </select>
-                        <button type="button" class="remove-row text-sm font-medium text-red-600 hover:text-red-800">&times;</button>
+                        <x-gender-picker name="entries[__index__][gender]" />
+                        <button type="button" class="remove-row cursor-pointer text-sm font-medium text-red-600 hover:text-red-800">&times;</button>
                     </div>
                 </template>
 
@@ -189,7 +225,7 @@
                     (() => {
                         const rows = document.getElementById('participant-rows');
                         const template = document.getElementById('participant-row-template');
-                        let index = 1;
+                        let index = {{ max(count($importedEntries), 1) }};
 
                         document.getElementById('add-row').addEventListener('click', () => {
                             const html = template.innerHTML.replaceAll('__index__', index++);
@@ -224,6 +260,9 @@
                     @error('names')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
+                    @error('entries')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
 
                     <button
                         type="submit"
@@ -239,7 +278,8 @@
             <h2 class="text-lg font-medium mb-1 text-emerald-900">Import from CSV</h2>
             <p class="text-sm text-gray-500 mb-4">
                 A CSV with <code>name</code> and (optional) <code>gender</code> columns. Missing genders default to
-                Not Specified.
+                Not Specified. Imported names are loaded into "Add names manually" for you to review — nothing is
+                assigned until you click "Randomize into groups".
             </p>
 
             <form method="POST" action="{{ route('batches.participants.import', $batch) }}" enctype="multipart/form-data">
@@ -254,7 +294,7 @@
                     type="submit"
                     class="mt-4 inline-flex items-center rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm ring-1 ring-amber-400 hover:bg-emerald-800"
                 >
-                    Import CSV
+                    Load from CSV
                 </button>
             </form>
         </div>
@@ -265,13 +305,15 @@
     </div>
 
     <style>
-        .transfer-menu summary::-webkit-details-marker { display: none; }
-        .transfer-menu[open] summary { color: #059669; }
+        .transfer-menu summary::-webkit-details-marker,
+        .rename-team-menu summary::-webkit-details-marker { display: none; }
+        .transfer-menu[open] summary,
+        .rename-team-menu[open] summary { color: #059669; }
     </style>
 
     <script>
         document.addEventListener('click', (event) => {
-            document.querySelectorAll('.transfer-menu[open]').forEach((menu) => {
+            document.querySelectorAll('.transfer-menu[open], .rename-team-menu[open]').forEach((menu) => {
                 if (!menu.contains(event.target)) {
                     menu.removeAttribute('open');
                 }
@@ -279,12 +321,52 @@
         });
 
         (() => {
+            const counter = document.getElementById('names-counter');
+
+            const updateNamesCounter = () => {
+                const rowInputs = document.querySelectorAll('#participant-rows input[type="text"]');
+                let count;
+
+                if (rowInputs.length) {
+                    count = [...rowInputs].filter((input) => input.value.trim() !== '').length;
+                } else {
+                    const textarea = document.querySelector('textarea[name="names"]');
+                    count = textarea
+                        ? textarea.value.split(/\r\n|\r|\n/).filter((line) => line.trim() !== '').length
+                        : 0;
+                }
+
+                counter.textContent = `${count} ${count === 1 ? 'name' : 'names'} loaded`;
+            };
+
+            updateNamesCounter();
+
+            document.addEventListener('input', (event) => {
+                if (event.target.matches('#participant-rows input[type="text"], textarea[name="names"]')) {
+                    updateNamesCounter();
+                }
+
+                if (event.target.matches('.duplicate-name-field')) {
+                    event.target.classList.remove('duplicate-name-field', 'border-red-400', 'bg-red-50');
+                    event.target.classList.add('border-gray-300');
+                    event.target.removeAttribute('title');
+                }
+            });
+
+            document.addEventListener('click', (event) => {
+                if (event.target.closest('#add-row, .remove-row')) {
+                    setTimeout(updateNamesCounter, 0);
+                }
+            });
+        })();
+
+        (() => {
             const section = document.getElementById('groups-section');
             const memberTotal = document.getElementById('member-total');
             const refreshUrl = @json(route('batches.refresh', $batch));
 
             const refresh = () => {
-                if (section.querySelector('.transfer-menu[open]')) {
+                if (section.querySelector('.transfer-menu[open], .rename-team-menu[open]')) {
                     return;
                 }
 

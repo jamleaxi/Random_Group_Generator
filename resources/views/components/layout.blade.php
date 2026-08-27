@@ -56,7 +56,7 @@
                     @auth
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
-                            <button type="submit" title="Log out" class="text-gray-500 hover:text-gray-900">
+                            <button type="submit" title="Log out" class="cursor-pointer text-gray-500 hover:text-gray-900">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                                     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>
                                 </svg>
@@ -76,6 +76,7 @@
                 'status' => session('status'),
                 'error' => session('error'),
                 'duplicates' => session('duplicates'),
+                'importDuplicates' => session('importDuplicates'),
             ]);
         </script>
     </body>

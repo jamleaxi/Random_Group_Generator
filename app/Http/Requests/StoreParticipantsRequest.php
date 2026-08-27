@@ -6,6 +6,7 @@ use App\Support\Gender;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Validator;
 
 class StoreParticipantsRequest extends FormRequest
 {
@@ -27,9 +28,23 @@ class StoreParticipantsRequest extends FormRequest
         return [
             'names' => ['nullable', 'string'],
             'entries' => ['nullable', 'array'],
-            'entries.*.name' => ['required_with:entries', 'string', 'max:255'],
+            'entries.*.name' => ['nullable', 'string', 'max:255'],
             'entries.*.gender' => ['nullable', 'string'],
         ];
+    }
+
+    /**
+     * Blank rows (e.g. an unused "add another" row) are dropped by
+     * entries(), not rejected outright, so only fail once nothing usable is
+     * left to submit.
+     */
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator) {
+            if ($this->entries() === []) {
+                $validator->errors()->add('entries', 'Please enter at least one name before randomizing.');
+            }
+        });
     }
 
     /**

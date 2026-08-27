@@ -37,13 +37,17 @@ class ImportParticipantsRequest extends FormRequest
      */
     public function entries(): array
     {
-        $handle = fopen($this->file('csv')->getRealPath(), 'r');
+        $content = file_get_contents($this->file('csv')->getRealPath());
 
-        if ($handle === false) {
+        if ($content === false) {
             return [];
         }
 
-        $header = fgetcsv($handle);
+        $handle = fopen('php://temp', 'r+');
+        fwrite($handle, $this->normalizeToUtf8($content));
+        rewind($handle);
+
+        $header = fgetcsv($handle, null, ',', '"', '\\');
 
         if ($header === false) {
             fclose($handle);
@@ -58,7 +62,7 @@ class ImportParticipantsRequest extends FormRequest
         $entries = [];
 
         if ($nameIndex !== false) {
-            while (($row = fgetcsv($handle)) !== false) {
+            while (($row = fgetcsv($handle, null, ',', '"', '\\')) !== false) {
                 $name = Str::title(trim((string) ($row[$nameIndex] ?? '')));
 
                 if ($name === '') {
@@ -75,5 +79,24 @@ class ImportParticipantsRequest extends FormRequest
         fclose($handle);
 
         return $entries;
+    }
+
+    /**
+     * CSV files saved from Excel on Windows are often Windows-1252 (or
+     * plain ISO-8859-1), not UTF-8 — left as-is, accented letters like "Ñ"
+     * become invalid byte sequences that render as "?" and throw off
+     * title-casing. Detect that and transcode to UTF-8 before parsing.
+     */
+    private function normalizeToUtf8(string $content): string
+    {
+        $content = preg_replace('/^\xEF\xBB\xBF/', '', $content) ?? $content;
+
+        if ($content === '' || mb_check_encoding($content, 'UTF-8')) {
+            return $content;
+        }
+
+        $encoding = mb_detect_encoding($content, ['Windows-1252', 'ISO-8859-1'], true) ?: 'Windows-1252';
+
+        return mb_convert_encoding($content, 'UTF-8', $encoding);
     }
 }

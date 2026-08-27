@@ -17,7 +17,7 @@
                 </p>
             </header>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 @foreach ($batch->groupTeams as $team)
                     @php $genderCounts = $team->genderCounts(); @endphp
                     <div class="rounded-md border border-emerald-200 border-t-4 border-t-amber-400 bg-white p-4 shadow-sm">

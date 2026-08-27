@@ -29,7 +29,7 @@ class JoinBatchRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'first_name' => ['required', 'string', 'max:255'],
             'middle_initial' => ['nullable', 'string', 'size:1', 'alpha'],
-            'gender' => ['nullable', Rule::in(array_keys(Gender::options()))],
+            'gender' => ['required', Rule::in([Gender::MALE, Gender::FEMALE, Gender::LGBTQ])],
         ];
     }
 

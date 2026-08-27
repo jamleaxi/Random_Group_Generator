@@ -36,7 +36,7 @@
                         <form method="POST" action="{{ route('batches.lock', $batch) }}">
                             @csrf
                             @method('PATCH')
-                            <button type="submit" title="{{ $batch->locked ? 'Unlock' : 'Lock' }}" class="text-amber-700 hover:text-amber-900">
+                            <button type="submit" title="{{ $batch->locked ? 'Unlock' : 'Lock' }}" class="cursor-pointer text-amber-700 hover:text-amber-900">
                                 <x-icons.lock :locked="$batch->locked" class="w-4 h-4" />
                             </button>
                         </form>
@@ -52,7 +52,7 @@
                                 type="submit"
                                 title="Delete"
                                 @disabled($batch->locked)
-                                class="text-red-600 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-300"
+                                class="cursor-pointer text-red-600 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-300"
                             >
                                 <x-icons.trash class="w-4 h-4" />
                             </button>

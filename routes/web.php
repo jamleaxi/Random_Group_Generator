@@ -31,12 +31,16 @@ Route::middleware('auth')->group(function () {
     Route::post('/batches', [BatchController::class, 'store'])->name('batches.store');
     Route::get('/batches/{batch}', [BatchController::class, 'show'])->name('batches.show');
     Route::get('/batches/{batch}/refresh', [BatchController::class, 'refresh'])->name('batches.refresh');
+    Route::get('/batches/{batch}/export', [BatchController::class, 'exportCsv'])->name('batches.export');
+    Route::get('/batches/{batch}/export/teams', [BatchController::class, 'exportTeamsExcel'])->name('batches.export.teams');
     Route::patch('/batches/{batch}', [BatchController::class, 'update'])->name('batches.update');
+    Route::patch('/batches/{batch}/teams/{groupTeam}', [BatchController::class, 'renameTeam'])->name('batches.teams.rename');
     Route::delete('/batches/{batch}', [BatchController::class, 'destroy'])->name('batches.destroy');
     Route::patch('/batches/{batch}/lock', [BatchController::class, 'toggleLock'])->name('batches.lock');
     Route::post('/batches/{batch}/link', [BatchController::class, 'openLink'])->name('batches.link.open');
     Route::delete('/batches/{batch}/link', [BatchController::class, 'closeLink'])->name('batches.link.close');
     Route::post('/batches/{batch}/participants', [BatchController::class, 'storeParticipants'])->name('batches.participants.store');
+    Route::delete('/batches/{batch}/participants', [BatchController::class, 'clearParticipants'])->name('batches.participants.clear');
     Route::post('/batches/{batch}/participants/import', [BatchController::class, 'importParticipants'])->name('batches.participants.import');
     Route::patch('/batches/{batch}/participants/{participant}/transfer/{groupTeam}', [BatchController::class, 'transferParticipant'])->name('batches.participants.transfer');
     Route::delete('/batches/{batch}/participants/{participant}', [BatchController::class, 'destroyParticipant'])->name('batches.participants.destroy');

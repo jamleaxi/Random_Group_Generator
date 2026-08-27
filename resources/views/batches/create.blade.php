@@ -1,5 +1,10 @@
 <x-layout title="New batch – Random Group Generator">
-    <h1 class="text-2xl font-semibold mb-6 text-emerald-900">Start a new grouping batch</h1>
+    <div class="mb-6 flex items-center justify-between">
+        <h1 class="text-2xl font-semibold text-emerald-900">Start a new grouping batch</h1>
+        <a href="{{ route('batches.index') }}" class="text-sm font-medium text-gray-500 hover:text-gray-900">
+            &larr; Back to batches
+        </a>
+    </div>
 
     <form method="POST" action="{{ route('batches.store') }}" class="space-y-6">
         @csrf

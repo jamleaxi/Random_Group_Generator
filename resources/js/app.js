@@ -85,22 +85,78 @@ document.addEventListener('DOMContentLoaded', () => {
         if (flash.duplicates && flash.duplicates.length) {
             showToast(`Already in this batch, skipped: ${flash.duplicates.join(', ')}`, 'warning', 7000);
         }
+
+        if (flash.importDuplicates && flash.importDuplicates.length) {
+            showToast(`Duplicate name(s) found in the CSV: ${flash.importDuplicates.join(', ')} — highlighted below.`, 'warning', 8000);
+        }
     }
 
-    document.querySelectorAll('form[data-confirm]').forEach((form) => {
-        form.addEventListener('submit', (event) => {
-            if (form.dataset.confirmed === 'true') {
-                return;
+    document.addEventListener('click', (event) => {
+        const copyButton = event.target.closest('.copy-link-btn');
+
+        if (copyButton) {
+            const input = copyButton.previousElementSibling;
+
+            navigator.clipboard.writeText(input.value)
+                .then(() => showToast('Link copied to clipboard.'))
+                .catch(() => showToast('Could not copy link.', 'error'));
+
+            return;
+        }
+
+        const option = event.target.closest('.gender-option');
+
+        if (!option) {
+            return;
+        }
+
+        const picker = option.closest('.gender-picker');
+        const input = picker.querySelector('.gender-picker-input');
+
+        input.value = option.dataset.value;
+
+        picker.querySelectorAll('.gender-option').forEach((button) => {
+            const selected = button === option;
+
+            button.classList.toggle('bg-emerald-100', selected);
+            button.classList.toggle('ring-1', selected);
+            button.classList.toggle('ring-emerald-400', selected);
+            button.classList.toggle('hover:bg-gray-100', !selected);
+            button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+        });
+    });
+
+    document.addEventListener('input', (event) => {
+        if (!event.target.matches('[data-capitalize]')) {
+            return;
+        }
+
+        const input = event.target;
+        const start = input.selectionStart;
+        const end = input.selectionEnd;
+
+        input.value = input.value.replace(
+            /\p{L}+/gu,
+            (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        );
+
+        input.setSelectionRange(start, end);
+    });
+
+    document.addEventListener('submit', (event) => {
+        const form = event.target.closest('form[data-confirm]');
+
+        if (!form || form.dataset.confirmed === 'true') {
+            return;
+        }
+
+        event.preventDefault();
+
+        confirmToast(form.dataset.confirm).then((confirmed) => {
+            if (confirmed) {
+                form.dataset.confirmed = 'true';
+                form.requestSubmit();
             }
-
-            event.preventDefault();
-
-            confirmToast(form.dataset.confirm).then((confirmed) => {
-                if (confirmed) {
-                    form.dataset.confirmed = 'true';
-                    form.submit();
-                }
-            });
         });
     });
 });
