@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\BatchFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Batch extends Model
@@ -18,6 +19,7 @@ class Batch extends Model
         'locked',
         'balance_gender',
         'public_token',
+        'created_by',
     ];
 
     /**
@@ -34,6 +36,14 @@ class Batch extends Model
     public function isOpenForSubmissions(): bool
     {
         return ! $this->locked && $this->public_token !== null;
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

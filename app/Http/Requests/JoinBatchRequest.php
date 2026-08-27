@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Support\Gender;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class JoinBatchRequest extends FormRequest
@@ -32,14 +33,18 @@ class JoinBatchRequest extends FormRequest
         ];
     }
 
+    /**
+     * Build the participant's full display name from the last, first, and
+     * middle-initial inputs, each capitalized.
+     */
     public function fullName(): string
     {
         $middle = $this->string('middle_initial')->trim();
 
         $parts = array_filter([
-            $this->string('first_name')->trim()->value(),
+            Str::title($this->string('first_name')->trim()->value()),
             $middle->isNotEmpty() ? $middle->upper()->value().'.' : null,
-            $this->string('last_name')->trim()->value(),
+            Str::title($this->string('last_name')->trim()->value()),
         ]);
 
         return implode(' ', $parts);

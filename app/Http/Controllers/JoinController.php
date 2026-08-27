@@ -41,11 +41,7 @@ class JoinController extends Controller
 
         $randomizer = app(GroupRandomizer::class);
 
-        $participant = $randomizer->assignOne($batch, $fullName, $request->genderValue(), [
-            'last_name' => $request->string('last_name')->trim()->value(),
-            'first_name' => $request->string('first_name')->trim()->value(),
-            'middle_initial' => $request->string('middle_initial')->trim()->upper()->value() ?: null,
-        ]);
+        $participant = $randomizer->assignOne($batch, $fullName, $request->genderValue());
 
         return view('join.show', [
             'batch' => $batch,

@@ -31,6 +31,22 @@ class Gender
     }
 
     /**
+     * Normalize loosely formatted gender input (e.g. from a CSV cell) into
+     * one of the known gender values, defaulting to unspecified.
+     */
+    public static function normalize(?string $value): string
+    {
+        $value = strtolower(trim((string) $value));
+
+        return match (true) {
+            in_array($value, ['male', 'm', 'boy', 'man'], true) => self::MALE,
+            in_array($value, ['female', 'f', 'girl', 'woman'], true) => self::FEMALE,
+            in_array($value, ['lgbtq', 'lgbtq+', 'lgbt', 'lgbt+'], true) => self::LGBTQ,
+            default => self::UNSPECIFIED,
+        };
+    }
+
+    /**
      * Tailwind text color class for the gender icon.
      */
     public static function colorClass(?string $gender): string

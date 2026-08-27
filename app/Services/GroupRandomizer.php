@@ -11,15 +11,15 @@ use Illuminate\Support\Collection;
 class GroupRandomizer
 {
     /**
-     * Randomly assign the given names to the batch's group teams, keeping
-     * team sizes as equal as possible across the whole batch (including
-     * names assigned in earlier rounds). Names that already exist in the
+     * Randomly assign the given name/gender entries to the batch's group
+     * teams, keeping team sizes (and, when enabled, gender counts) as equal
+     * as possible across the whole batch. Names that already exist in the
      * batch (case-insensitive) are skipped and returned as duplicates.
      *
-     * @param  list<string>  $names
+     * @param  list<array{name: string, gender: string}>  $entries
      * @return array{assigned: Collection<int, Participant>, duplicates: list<string>}
      */
-    public function assign(Batch $batch, array $names): array
+    public function assign(Batch $batch, array $entries): array
     {
         $existingNames = $batch->participants()->pluck('name')
             ->map(fn (string $name) => mb_strtolower($name))
@@ -27,27 +27,27 @@ class GroupRandomizer
 
         $seen = [];
         $duplicates = [];
-        $uniqueNames = [];
+        $uniqueEntries = [];
 
-        foreach ($names as $name) {
-            $key = mb_strtolower($name);
+        foreach ($entries as $entry) {
+            $key = mb_strtolower($entry['name']);
 
             if (in_array($key, $existingNames, true) || isset($seen[$key])) {
-                $duplicates[] = $name;
+                $duplicates[] = $entry['name'];
 
                 continue;
             }
 
             $seen[$key] = true;
-            $uniqueNames[] = $name;
+            $uniqueEntries[] = $entry;
         }
 
-        shuffle($uniqueNames);
+        shuffle($uniqueEntries);
 
         $assigned = collect();
 
-        foreach ($uniqueNames as $name) {
-            $assigned->push($this->assignOne($batch, $name, Gender::UNSPECIFIED));
+        foreach ($uniqueEntries as $entry) {
+            $assigned->push($this->assignOne($batch, $entry['name'], $entry['gender'] ?: Gender::UNSPECIFIED));
         }
 
         return [
@@ -62,17 +62,17 @@ class GroupRandomizer
      * `balance_gender` is enabled on the batch, the participant's own gender
      * count within each team is preferred over the team's overall size.
      */
-    public function assignOne(Batch $batch, string $name, string $gender, array $attributes = []): Participant
+    public function assignOne(Batch $batch, string $name, string $gender): Participant
     {
         $teams = $batch->groupTeams()->with('participants')->get();
         $teamId = $this->pickTeam($teams, $batch->balance_gender, $gender);
 
-        return Participant::create(array_merge([
+        return Participant::create([
             'batch_id' => $batch->id,
             'group_team_id' => $teamId,
             'name' => $name,
             'gender' => $gender,
-        ], $attributes));
+        ]);
     }
 
     /**

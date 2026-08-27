@@ -37,8 +37,8 @@ class PublicJoinTest extends TestCase
         GroupTeam::factory()->for($batch)->create(['name' => 'B', 'position' => 2]);
 
         $response = $this->post(route('join.store', $batch), [
-            'last_name' => 'Doe',
-            'first_name' => 'Jane',
+            'last_name' => 'doe',
+            'first_name' => 'jane',
             'middle_initial' => 'q',
             'gender' => Gender::FEMALE,
         ]);
@@ -48,7 +48,6 @@ class PublicJoinTest extends TestCase
             'batch_id' => $batch->id,
             'name' => 'Jane Q. Doe',
             'gender' => Gender::FEMALE,
-            'middle_initial' => 'Q',
         ]);
     }
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\BatchController;
 use App\Http\Controllers\JoinController;
@@ -22,16 +23,21 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingController::class, 'edit'])->name('settings.edit');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
+    Route::get('/admins', [AdminController::class, 'index'])->name('admins.index');
+    Route::post('/admins', [AdminController::class, 'store'])->name('admins.store');
+
     Route::get('/batches', [BatchController::class, 'index'])->name('batches.index');
     Route::get('/batches/create', [BatchController::class, 'create'])->name('batches.create');
     Route::post('/batches', [BatchController::class, 'store'])->name('batches.store');
     Route::get('/batches/{batch}', [BatchController::class, 'show'])->name('batches.show');
+    Route::get('/batches/{batch}/refresh', [BatchController::class, 'refresh'])->name('batches.refresh');
     Route::patch('/batches/{batch}', [BatchController::class, 'update'])->name('batches.update');
     Route::delete('/batches/{batch}', [BatchController::class, 'destroy'])->name('batches.destroy');
     Route::patch('/batches/{batch}/lock', [BatchController::class, 'toggleLock'])->name('batches.lock');
     Route::post('/batches/{batch}/link', [BatchController::class, 'openLink'])->name('batches.link.open');
     Route::delete('/batches/{batch}/link', [BatchController::class, 'closeLink'])->name('batches.link.close');
     Route::post('/batches/{batch}/participants', [BatchController::class, 'storeParticipants'])->name('batches.participants.store');
+    Route::post('/batches/{batch}/participants/import', [BatchController::class, 'importParticipants'])->name('batches.participants.import');
     Route::patch('/batches/{batch}/participants/{participant}/transfer/{groupTeam}', [BatchController::class, 'transferParticipant'])->name('batches.participants.transfer');
     Route::delete('/batches/{batch}/participants/{participant}', [BatchController::class, 'destroyParticipant'])->name('batches.participants.destroy');
 });

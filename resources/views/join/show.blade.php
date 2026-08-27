@@ -7,7 +7,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-emerald-50/40 text-gray-900 min-h-screen antialiased flex items-center justify-center px-4 py-10">
-        <div class="w-full max-w-md">
+        <div class="w-full max-w-lg">
             <div class="mb-6 text-center">
                 <p class="text-sm font-medium text-amber-700">Random Group Generator</p>
                 <h1 class="text-2xl font-semibold text-emerald-900">{{ $batch->name }}</h1>

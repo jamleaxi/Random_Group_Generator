@@ -16,9 +16,6 @@ class Participant extends Model
         'batch_id',
         'group_team_id',
         'name',
-        'last_name',
-        'first_name',
-        'middle_initial',
         'gender',
     ];
 

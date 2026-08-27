@@ -7,7 +7,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-emerald-50/40 text-gray-900 min-h-screen antialiased">
-        <div class="max-w-4xl mx-auto px-4 py-8 sm:py-12">
+        <div class="max-w-6xl mx-auto px-4 py-8 sm:py-12">
             <header class="mb-8 border-b-2 border-amber-400 pb-4">
                 <p class="text-sm font-medium text-amber-700">Random Group Generator</p>
                 <h1 class="text-2xl font-semibold text-emerald-900">{{ $batch->name }}</h1>
@@ -17,7 +17,7 @@
                 </p>
             </header>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach ($batch->groupTeams as $team)
                     @php $genderCounts = $team->genderCounts(); @endphp
                     <div class="rounded-md border border-emerald-200 border-t-4 border-t-amber-400 bg-white p-4 shadow-sm">

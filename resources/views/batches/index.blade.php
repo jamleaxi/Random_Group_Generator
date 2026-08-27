@@ -25,6 +25,10 @@
                             {{ $batch->participants_count }} {{ Str::plural('name', $batch->participants_count) }}
                             &middot;
                             {{ $batch->created_at->diffForHumans() }}
+                            @if ($batch->creator)
+                                &middot;
+                                by {{ $batch->creator->name }}
+                            @endif
                         </p>
                     </a>
 
@@ -32,8 +36,8 @@
                         <form method="POST" action="{{ route('batches.lock', $batch) }}">
                             @csrf
                             @method('PATCH')
-                            <button type="submit" class="text-sm font-medium text-amber-700 hover:text-amber-900">
-                                {{ $batch->locked ? 'Unlock' : 'Lock' }}
+                            <button type="submit" title="{{ $batch->locked ? 'Unlock' : 'Lock' }}" class="text-amber-700 hover:text-amber-900">
+                                <x-icons.lock :locked="$batch->locked" class="w-4 h-4" />
                             </button>
                         </form>
 
@@ -46,10 +50,11 @@
                             @method('DELETE')
                             <button
                                 type="submit"
+                                title="Delete"
                                 @disabled($batch->locked)
-                                class="text-sm font-medium text-red-600 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-300"
+                                class="text-red-600 hover:text-red-800 disabled:cursor-not-allowed disabled:text-gray-300"
                             >
-                                Delete
+                                <x-icons.trash class="w-4 h-4" />
                             </button>
                         </form>
                     </div>

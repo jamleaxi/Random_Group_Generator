@@ -31,10 +31,10 @@
         <header class="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
             <span class="text-lg font-semibold text-emerald-900">Random Group Generator</span>
             <a
-                href="{{ route('login') }}"
+                href="{{ auth()->check() ? route('batches.index') : route('login') }}"
                 class="inline-flex items-center rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white shadow-sm ring-1 ring-amber-400 hover:bg-emerald-800"
             >
-                Admin login
+                {{ auth()->check() ? 'Resume Session' : 'Admin login' }}
             </a>
         </header>
 
@@ -81,7 +81,7 @@
             <div class="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-6 text-left">
                 <div class="rounded-md border border-emerald-200 bg-white p-5 shadow-sm">
                     <h3 class="font-semibold text-emerald-900 mb-1">Share one link</h3>
-                    <p class="text-sm text-gray-600">Admins open a batch and hand out a link over the local network.</p>
+                    <p class="text-sm text-gray-600">Admins open a batch and hand out a link over the internet or a local network.</p>
                 </div>
                 <div class="rounded-md border border-emerald-200 bg-white p-5 shadow-sm">
                     <h3 class="font-semibold text-emerald-900 mb-1">Everyone signs up</h3>

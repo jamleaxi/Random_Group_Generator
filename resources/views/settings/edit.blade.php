@@ -1,5 +1,10 @@
 <x-layout title="Settings – Random Group Generator">
-    <h1 class="text-2xl font-semibold mb-6 text-emerald-900">Settings</h1>
+    <div class="mb-6 flex items-center justify-between">
+        <h1 class="text-2xl font-semibold text-emerald-900">Settings</h1>
+        <a href="{{ route('batches.index') }}" class="text-sm font-medium text-gray-500 hover:text-gray-900">
+            &larr; Back to batches
+        </a>
+    </div>
 
     <div class="rounded-md border border-emerald-200 bg-white p-6 shadow-sm">
         <form method="POST" action="{{ route('settings.update') }}" enctype="multipart/form-data" class="space-y-6">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ImportParticipantsRequest;
 use App\Http\Requests\StoreBatchRequest;
 use App\Http\Requests\StoreParticipantsRequest;
 use App\Http\Requests\UpdateBatchRequest;
@@ -9,6 +10,7 @@ use App\Models\Batch;
 use App\Models\GroupTeam;
 use App\Models\Participant;
 use App\Services\GroupRandomizer;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -22,6 +24,7 @@ class BatchController extends Controller
     public function index(): View
     {
         $batches = Batch::withCount('participants')
+            ->with('creator')
             ->latest()
             ->get();
 
@@ -53,6 +56,7 @@ class BatchController extends Controller
                 'name' => $request->validated('name') ?: 'Untitled batch',
                 'group_count' => $groupCount,
                 'balance_gender' => $request->boolean('balance_gender'),
+                'created_by' => $request->user()->id,
             ]);
 
             for ($position = 1; $position <= $groupCount; $position++) {
@@ -74,9 +78,25 @@ class BatchController extends Controller
      */
     public function show(Batch $batch): View
     {
-        $batch->load(['groupTeams.participants']);
+        $batch->load(['groupTeams.participants', 'creator']);
 
         return view('batches.show', ['batch' => $batch]);
+    }
+
+    /**
+     * Return the batch's current groups markup and member total, polled by
+     * the admin view so newly self-submitted members appear automatically.
+     */
+    public function refresh(Batch $batch): JsonResponse
+    {
+        $batch->load(['groupTeams.participants']);
+        $total = $batch->participants->count();
+
+        return response()->json([
+            'total' => $total,
+            'totalLabel' => "{$total} ".Str::plural('member', $total).' total',
+            'html' => view('batches.partials.groups', ['batch' => $batch])->render(),
+        ]);
     }
 
     /**
@@ -98,7 +118,7 @@ class BatchController extends Controller
      */
     public function storeParticipants(StoreParticipantsRequest $request, Batch $batch, GroupRandomizer $randomizer): RedirectResponse
     {
-        $result = $randomizer->assign($batch, $request->names());
+        $result = $randomizer->assign($batch, $request->entries());
 
         if ($result['duplicates'] !== []) {
             return redirect()->route('batches.show', $batch)
@@ -107,6 +127,23 @@ class BatchController extends Controller
 
         return redirect()->route('batches.show', $batch)
             ->with('status', $result['assigned']->count().' name(s) randomized into groups.');
+    }
+
+    /**
+     * Import name/gender entries from an uploaded CSV file and randomly
+     * assign them to the batch's group teams.
+     */
+    public function importParticipants(ImportParticipantsRequest $request, Batch $batch, GroupRandomizer $randomizer): RedirectResponse
+    {
+        $result = $randomizer->assign($batch, $request->entries());
+
+        if ($result['duplicates'] !== []) {
+            return redirect()->route('batches.show', $batch)
+                ->with('duplicates', $result['duplicates']);
+        }
+
+        return redirect()->route('batches.show', $batch)
+            ->with('status', $result['assigned']->count().' name(s) imported and randomized into groups.');
     }
 
     /**
